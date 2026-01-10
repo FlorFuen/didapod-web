@@ -114,19 +114,10 @@ if up_file:
             
             st.balloons()
             
-            # --- RESULTADO FINAL ---
-            st.markdown("<div style='background: rgba(255,255,255,0.05); padding: 25px; border-radius: 20px; border: 1px solid #7c3aed;'>", unsafe_allow_html=True)
-            st.markdown("<h3 style='text-align:center;'>✅ Your Podcast is Ready</h3>", unsafe_allow_html=True)
-            
-            with st.expander("▶️ CLICK HERE TO LISTEN BEFORE DOWNLOADING"):
-                st.audio("result.mp3")
-            
-            st.write("")
-            with open("result.mp3", "rb") as f:
-                st.download_button("📥 DOWNLOAD FINAL FILE", f, "didapod_result.mp3")
-            st.markdown("</div>", unsafe_allow_html=True)
+ # --- RESULTADO FINAL --- st.markdown("<div style='background: rgba(255,255,255,0.05); padding: 25px; border-radius: 20px; border: 1px solid #7c3aed;'>", unsafe_allow_html=True) st.markdown("<h3 style='text-align:center;'>✅ Your Podcast is Ready</h3>", unsafe_allow_html=True) # Botón de escuchar directamente st.audio("result.mp3") # Botón de descarga with open("result.mp3", "rb") as f: st.download_button("📥 DOWNLOAD FINAL FILE", f, "didapod_result.mp3") st.markdown("</div>", unsafe_allow_html=True)
 
         except Exception as e: st.error(f"Error: {e}")
 
 st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US</small></center>", unsafe_allow_html=True)
+
 
