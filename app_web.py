@@ -34,7 +34,7 @@ if not st.session_state["auth"]:
                 st.rerun()
     st.stop()
 
-# --- 3. BRANDING & HEADER ---
+# --- 3. BRANDING ---
 col1, col2 = st.columns([1, 4])
 with col2:
     st.markdown('<p class="main-title">DIDAPOD</p>', unsafe_allow_html=True)
@@ -44,60 +44,61 @@ st.markdown("---")
 target_lang = st.selectbox("Select Target Language:", ["English", "Spanish", "French"])
 up_file = st.file_uploader("Upload podcast (MP3/WAV)", type=["mp3", "wav"])
 
-async def generate_voice_segments(text, voice, output_filename):
-    # Divide el texto en partes de 4000 caracteres para evitar el error de límite
-    text_parts = [text[i:i+4000] for i in range(0, len(text), 4000)]
-    combined_audio = AudioSegment.empty()
+# Función para procesar textos largos dividiéndolos en partes
+async def safe_voice_generation(text, voice, output_file):
+    # Divide el texto cada 4000 caracteres para no chocar con el límite de 5000
+    parts = [text[i:i+4000] for i in range(0, len(text), 4000)]
+    final_audio = AudioSegment.empty()
     
-    for i, part in enumerate(text_parts):
-        temp_part = f"part_{i}.mp3"
+    for i, part in enumerate(parts):
+        temp_name = f"temp_part_{i}.mp3"
         communicate = edge_tts.Communicate(part, voice)
-        await communicate.save(temp_part)
-        part_audio = AudioSegment.from_file(temp_part)
-        combined_audio += part_audio
-        os.remove(temp_part)
-        
-    combined_audio.export(output_filename, format="mp3")
+        await communicate.save(temp_name)
+        final_audio += AudioSegment.from_file(temp_name)
+        os.remove(temp_name)
+    
+    final_audio.export(output_file, format="mp3")
 
 if up_file:
     st.audio(up_file)
     if st.button("🚀 START AI DUBBING"):
         try:
-            with st.status("🤖 Processing heavy-duty dubbing...", expanded=True) as status:
-                # STEP 1: Process Audio in Chunks
-                st.write("⏳ Fragmenting audio for stability...")
-                with open("t.mp3", "wb") as f: f.write(up_file.getbuffer())
-                audio = AudioSegment.from_file("t.mp3")
+            with st.status("🤖 Processing long-format audio...", expanded=True) as status:
+                # PASO 1: Audio Chunking (Evita Broken Pipe)
+                st.write("⏳ Step 1: Fragmenting audio file...")
+                with open("input.mp3", "wb") as f: f.write(up_file.getbuffer())
+                audio = AudioSegment.from_file("input.mp3")
                 chunk_ms = 30000 
                 chunks = [audio[i:i + chunk_ms] for i in range(0, len(audio), chunk_ms)]
                 
-                # STEP 2: Transcription
+                # PASO 2: Transcription
                 r = sr.Recognizer()
-                full_t = ""
+                full_text = ""
                 for i, c in enumerate(chunks):
-                    st.write(f"🎙️ Transcribing fragment {i+1}/{len(chunks)}...")
+                    st.write(f"🎙️ Transcribing segment {i+1}/{len(chunks)}...")
                     c.export("c.wav", format="wav")
                     with sr.AudioFile("c.wav") as src:
                         try:
-                            full_t += r.recognize_google(r.record(src), language="es-ES") + " "
+                            full_text += r.recognize_google(r.record(src), language="es-ES") + " "
                         except: continue
 
-                # STEP 3: Translation
-                st.write("🌍 Translating content...")
+                # PASO 3: Translation
+                st.write("🌍 Step 3: Translating full text...")
                 codes = {"English": "en", "Spanish": "es", "French": "fr"}
-                final_t = GoogleTranslator(source='auto', target=codes[target_lang]).translate(full_t)
+                translated_text = GoogleTranslator(source='auto', target=codes[target_lang]).translate(full_text)
 
-                # STEP 4: Voice Generation with Chunking (Fixes 5000 chars error)
-                st.write("🔊 Generating professional AI voice...")
-                voice_m = {"English": "en-US-EmmaMultilingualNeural", "Spanish": "es-ES-ElviraNeural", "French": "fr-FR-DeniseNeural"}
+                # PASO 4: Voice Generation with Safety Split
+                st.write("🔊 Step 4: Generating AI voice in segments...")
+                voice_map = {"English": "en-US-EmmaMultilingualNeural", "Spanish": "es-ES-ElviraNeural", "French": "fr-FR-DeniseNeural"}
                 
-                asyncio.run(generate_voice_segments(final_t, voice_m[target_lang], "final_result.mp3"))
+                asyncio.run(safe_voice_generation(translated_text, voice_map[target_lang], "final_dub.mp3"))
                 status.update(label="Dubbing Complete!", state="complete")
             
             st.balloons()
-            with open("final_result.mp3", "rb") as f:
-                st.download_button("📥 Download Final Podcast", f, "didapod_pro_result.mp3")
+            with open("final_dub.mp3", "rb") as f:
+                st.download_button("📥 Download Result", f, "didapod_pro_result.mp3")
         except Exception as e:
-            st.error(f"Technical detail: {e}")
+            st.error(f"Technical error: {e}")
 
-st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US</small></center>", unsafe_allow_html=True)
+st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US | AI Enterprise Solutions</small></center>", unsafe_allow_html=True)
+
