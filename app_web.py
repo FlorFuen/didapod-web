@@ -18,35 +18,54 @@ st.markdown("""
         background-color: #7c3aed !important; color: white !important; 
         border-radius: 10px; padding: 15px 30px; font-weight: bold; width: 100%; border: none;
     }
-    .preview-box { background: rgba(124, 58, 237, 0.1); padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #7c3aed; }
+    /* Caja de Preview Mejorada */
+    .preview-section { 
+        background: rgba(124, 58, 237, 0.2); 
+        padding: 25px; 
+        border-radius: 15px; 
+        margin-top: 25px; 
+        border: 2px solid #7c3aed;
+        text-align: center;
+    }
     label, .stMarkdown p, .stSuccess, .stInfo { color: white !important; }
+    h3 { color: #a78bfa !important; font-weight: 700 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. LOGIN (Mantenemos tus credenciales) ---
+# --- 2. LOGIN SYSTEM ---
 if "auth" not in st.session_state: st.session_state["auth"] = False
 if not st.session_state["auth"]:
-    user = st.text_input("Username")
-    pw = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if user == "admin" and pw == "didactai2026":
-            st.session_state["auth"] = True
-            st.rerun()
+    st.markdown("<h2 style='color:white;'>🔐 Restricted Access</h2>", unsafe_allow_html=True)
+    with st.form("login"):
+        u = st.text_input("Username")
+        p = st.text_input("Password", type="password")
+        if st.form_submit_button("Login"):
+            if u == "admin" and p == "didactai2026":
+                st.session_state["auth"] = True
+                st.rerun()
+            else: st.error("Invalid credentials")
     st.stop()
 
-# --- 3. MAIN APP ---
-st.markdown('<p class="main-title">DIDAPOD PRO</p>', unsafe_allow_html=True)
-st.markdown('<p class="sub-title">Safe Cascade Dubbing System</p>', unsafe_allow_html=True)
+# --- 3. BRANDING ---
+col1, col2 = st.columns([1, 4])
+with col1:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=80)
+with col2:
+    st.markdown('<p class="main-title">DIDAPOD PRO</p>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-title">Powered by DidactAI-US</p>', unsafe_allow_html=True)
 
-target_lang = st.selectbox("Target Language:", ["English", "Spanish", "French"])
-up_file = st.file_uploader("Upload podcast", type=["mp3", "wav"])
+target_lang = st.selectbox("Select Target Language:", ["English", "Spanish", "French"])
+up_file = st.file_uploader("Upload podcast (MP3/WAV)", type=["mp3", "wav"])
 
 if up_file:
     st.audio(up_file)
     if st.button("🚀 START AI DUBBING"):
         try:
-            with st.status("🤖 Processing...", expanded=True) as status:
+            with st.status("🤖 Processing in Safe Cascade Mode...", expanded=True) as status:
+                st.write("⏳ Step 1: Fragmenting audio...")
                 with open("t.mp3", "wb") as f: f.write(up_file.getbuffer())
+                
                 audio = AudioSegment.from_file("t.mp3")
                 chunk_ms = 40000 
                 chunks = [audio[i:i + chunk_ms] for i in range(0, len(audio), chunk_ms)]
@@ -75,23 +94,24 @@ if up_file:
             
             st.balloons()
             
-            # --- ZONA DE RESULTADOS ---
-            st.markdown('<div class="preview-box">', unsafe_allow_html=True)
-            st.markdown("### ✅ Your Podcast is Ready")
+            # --- SECCIÓN DE PREVIEW VISIBLE ---
+            st.markdown('<div class="preview-section">', unsafe_allow_html=True)
+            st.markdown("### ▶️ Preview your Dubbed Podcast")
+            st.markdown("Listen to the result before downloading:")
+            st.audio("final_result.mp3") # El reproductor ahora es 100% visible
             
-            # Botón de Preview usando un Expander para que actúe como "clic para oír"
-            with st.expander("▶️ CLICK HERE TO LISTEN BEFORE DOWNLOADING"):
-                st.audio("final_result.mp3")
+            st.markdown("<br>", unsafe_allow_html=True)
             
-            # Botón de Descarga
             with open("final_result.mp3", "rb") as f:
-                st.download_button("📥 DOWNLOAD FINAL FILE", f, "didapod_result.mp3")
+                st.download_button("📥 DOWNLOAD FULL PODCAST", f, "didapod_result.mp3")
             st.markdown('</div>', unsafe_allow_html=True)
 
         except Exception as e:
-            st.error(f"Error: {e}")
+            st.error(f"Technical detail: {e}")
 
-st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US</small></center>", unsafe_allow_html=True)
+# --- 4. INSTRUCTIONS ---
+st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US | AI Enterprise Solutions</small></center>", unsafe_allow_html=True)
+
 
 
 
