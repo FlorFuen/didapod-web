@@ -6,7 +6,7 @@ import speech_recognition as sr
 from deep_translator import GoogleTranslator
 from pydub import AudioSegment
 
-# --- 1. PAGE CONFIG & STYLING (English) ---
+# --- 1. SETTINGS & STYLE ---
 st.set_page_config(page_title="DIDAPOD - DidactAI", page_icon="🎙️", layout="centered")
 
 st.markdown("""
@@ -22,9 +22,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. PRIVACY SYSTEM (English) ---
+# --- 2. LOGIN SYSTEM ---
 if "auth" not in st.session_state: st.session_state["auth"] = False
-
 if not st.session_state["auth"]:
     st.markdown("<h2 style='color:white;'>🔐 DidactAI Restricted Access</h2>", unsafe_allow_html=True)
     with st.form("login"):
@@ -37,7 +36,7 @@ if not st.session_state["auth"]:
             else: st.error("Invalid credentials")
     st.stop()
 
-# --- 3. INTERFACE (English) ---
+# --- 3. INTERFACE ---
 col1, col2 = st.columns([1, 4])
 with col1:
     if os.path.exists("logo.png"): st.image("logo.png", width=80)
@@ -62,42 +61,41 @@ if uploaded_file:
     if st.button("🚀 START AI DUBBING"):
         try:
             with st.status("🤖 Processing audio...", expanded=True) as status:
-                # 1. Save and Convert
-                st.write("⏳ Preparing file...")
+                st.write("⏳ Step 1: Preparing file...")
                 with open("temp_input.mp3", "wb") as f:
                     f.write(uploaded_file.getbuffer())
                 
                 audio = AudioSegment.from_file("temp_input.mp3")
+                audio = audio.set_frame_rate(16000).set_channels(1) # Optimizar para IA
                 audio.export("temp_wav.wav", format="wav")
 
-                # 2. Transcription
-                st.write("🎙️ Transcribing original podcast...")
+                st.write("🎙️ Step 2: Transcribing (this may take a minute)...")
                 r = sr.Recognizer()
                 with sr.AudioFile("temp_wav.wav") as source:
+                    # Ajuste para evitar el 'Broken pipe' en archivos largos
                     audio_data = r.record(source)
-                    text_orig = r.recognize_google(audio_data, language="es-ES") # Detects Spanish input
+                    text_orig = r.recognize_google(audio_data, language="es-ES")
 
-                # 3. Translation
-                st.write("🌍 Translating content...")
+                st.write("🌍 Step 3: Translating content...")
                 codes = {"English": "en", "Spanish": "es", "French": "fr"}
                 text_trans = GoogleTranslator(source='auto', target=codes[target_lang]).translate(text_orig)
 
-                # 4. AI Voice Generation (Using Emma for English)
-                st.write("🔊 Generating AI Voice...")
+                st.write("🔊 Step 4: Generating AI Voice (Emma)...")
                 voice_map = {
                     "English": "en-US-EmmaMultilingualNeural",
                     "Spanish": "es-ES-ElviraNeural",
                     "French": "fr-FR-DeniseNeural"
                 }
                 
+                output_file = "didapod_result.mp3"
                 communicate = edge_tts.Communicate(text_trans, voice_map[target_lang])
-                asyncio.run(communicate.save("output.mp3"))
+                asyncio.run(communicate.save(output_file))
                 
                 status.update(label="Dubbing Complete!", state="complete")
             
             st.balloons()
-            with open("output.mp3", "rb") as f:
-                st.download_button("📥 Download Dubbed Podcast", f, "didapod_result.mp3")
+            with open(output_file, "rb") as f:
+                st.download_button("📥 Download Dubbed Podcast", f, file_name=output_file)
         
         except Exception as e:
             st.error(f"Technical detail: {e}")
