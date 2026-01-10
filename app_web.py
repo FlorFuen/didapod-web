@@ -6,48 +6,55 @@ import speech_recognition as sr
 from deep_translator import GoogleTranslator
 from pydub import AudioSegment
 
-# --- 1. CONFIGURACIÓN Y ESTILO AGRESIVO ---
+# --- 1. CONFIGURACIÓN E INTERFAZ LUXURY ---
 st.set_page_config(page_title="DIDAPOD - DidactAI", page_icon="🎙️", layout="centered")
 
-# URL DIRECTA DEL LOGO
+# URL de tu logo en PostImages
 URL_LOGO = "https://i.postimg.cc/1z07Pqqf/logo.png"
+# 3. ENCABEZADO CON LOGO
+try:
+    img = Image.open("logo.png")
+    col_l, col_r = st.columns([1, 4])
+    with col_l:
+        st.image(img, width=120)
+    with col_r:
+        st.markdown('<p class="main-title">DIDAPOD</p>', unsafe_allow_html=True)
+        st.write("<p style='color: #94a3b8;'>Powered by DidactAI</p>", unsafe_allow_html=True)
+except:
+    st.markdown('<p class="main-title">DIDAPOD by DidactAI</p>', unsafe_allow_html=True)
+
+st.write("---")
+
 
 st.markdown(f"""
     <style>
     .stApp {{ background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }}
     
-    /* FORZAR TEXTO BLANCO EN TODO EL EXPANDER */
-    .stExpander {{ 
+    /* DISEÑO DE LOS BOTONES GRANDES */
+    .stButton>button, .stDownloadButton>button {{ 
         background-color: #7c3aed !important; 
-        border: 2px solid white !important; 
-        border-radius: 10px !important;
-    }}
-    .stExpander * {{ 
         color: white !important; 
-        font-weight: bold !important; 
+        border-radius: 12px !important; 
+        padding: 20px !important; 
+        font-weight: 800 !important; 
+        width: 100% !important; 
+        border: 2px solid #a78bfa !important;
+        font-size: 18px !important;
+        text-transform: uppercase;
+        margin-bottom: 10px;
     }}
     
-    /* ESTILO PARA EL LOGO */
-    .header-box {{
-        display: flex;
-        align-items: center;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 20px;
-        border-radius: 15px;
-        margin-bottom: 25px;
-    }}
-    .logo-img {{
-        width: 100px;
-        margin-right: 20px;
-        filter: drop-shadow(0px 0px 5px rgba(124, 58, 237, 0.5));
-    }}
-    .title-text {{
-        color: white;
-        font-size: 38px;
-        font-weight: 800;
-        margin: 0;
+    /* CAJA DE RESULTADO */
+    .result-card {{ 
+        background: rgba(255, 255, 255, 0.05); 
+        padding: 30px; 
+        border-radius: 20px; 
+        border: 1px solid #7c3aed; 
+        text-align: center;
+        margin-top: 20px;
     }}
     
+    .main-title {{ color: white; font-size: 42px; font-weight: 800; margin: 0; }}
     label, .stMarkdown p {{ color: white !important; }}
     </style>
     """, unsafe_allow_html=True)
@@ -63,18 +70,15 @@ if not st.session_state["auth"]:
                 st.rerun()
     st.stop()
 
-# --- 3. ENCABEZADO (HTML PURO PARA EL LOGO) ---
-st.markdown(f"""
-    <div class="header-box">
-        <img src="{URL_LOGO}" class="logo-img">
-        <div>
-            <p class="title-text">DIDAPOD PRO</p>
-            <p style="color:#94a3b8; margin:0;">Enterprise Dubbing by DidactAI-US</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+# --- 3. ENCABEZADO CON LOGO ---
+col_logo, col_txt = st.columns([1, 4])
+with col_logo:
+    st.image(URL_LOGO, width=100)
+with col_txt:
+    st.markdown('<p class="main-title">DIDAPOD PRO</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:#94a3b8; font-size:18px;">Powered by DidactAI-US</p>', unsafe_allow_html=True)
 
-# --- 4. PROCESAMIENTO (MODO CASCADA) ---
+# --- 4. PROCESAMIENTO ---
 target_lang = st.selectbox("Select Target Language:", ["English", "Spanish", "French"])
 up_file = st.file_uploader("Upload podcast", type=["mp3", "wav"])
 
@@ -85,7 +89,7 @@ if up_file:
             with st.status("🤖 Processing...", expanded=True) as status:
                 with open("temp.mp3", "wb") as f: f.write(up_file.getbuffer())
                 audio = AudioSegment.from_file("temp.mp3")
-                # Fragmentos de 40 seg para evitar error de 5000 chars
+                # Cortes de 40 seg para evitar errores
                 chunks = [audio[i:i + 40000] for i in range(0, len(audio), 40000)]
                 
                 final_audio = AudioSegment.empty()
@@ -110,18 +114,23 @@ if up_file:
             
             st.balloons()
             
-            # --- ZONA DE RESULTADO ---
-            st.markdown("### ✅ Your Podcast is Ready")
+            # --- ZONA DE RESULTADO FINAL ---
+            st.markdown('<div class="result-card">', unsafe_allow_html=True)
+            st.markdown("<h2 style='color:white;'>✅ YOUR PODCAST IS READY</h2>", unsafe_allow_html=True)
             
-            # Usamos un truco de estilo para que el texto sea blanco sí o sí
+            # Botón de Escuchar (Usando un Expander estilizado como botón)
             with st.expander("▶️ CLICK HERE TO LISTEN BEFORE DOWNLOADING"):
                 st.audio("result.mp3")
             
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.write("") # Espacio
+            
+            # Botón de Descarga
             with open("result.mp3", "rb") as f:
                 st.download_button("📥 DOWNLOAD FINAL FILE", f, "didapod_result.mp3")
+            st.markdown('</div>', unsafe_allow_html=True)
 
         except Exception as e: st.error(f"Error: {e}")
 
 st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US</small></center>", unsafe_allow_html=True)
+
 
