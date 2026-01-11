@@ -81,7 +81,7 @@ with col_r:
 st.write("---")
 
 # --- 4. PROCESAMIENTO ---
-target_lang = st.selectbox("Select Target Language:", ["English", "Spanish", "French"])
+target_lang = st.selectbox("Select Target Language:", ["English", "Spanish", "French","Portuguese"])
 up_file = st.file_uploader("Upload podcast", type=["mp3", "wav"])
 
 if up_file:
@@ -132,6 +132,7 @@ if up_file:
         except Exception as e: st.error(f"Error: {e}")
 
 st.markdown("<br><hr><center><small style='color:#94a3b8;'>© 2026 DidactAI-US</small></center>", unsafe_allow_html=True)
+
 
 
 
